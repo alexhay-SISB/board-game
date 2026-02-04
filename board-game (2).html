@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roll and Retrieve Board Game</title>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #FF6B35;
+            --secondary: #F7931E;
+            --accent: #FFD23F;
+            --green: #06A77D;
+            --blue: #4ECDC4;
+            --purple: #9B59B6;
+            --dark: #2C3E50;
+            --light: #ECF0F1;
+        }
+
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(255, 107, 53, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(78, 205, 196, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 1000px;
+            width: 100%;
+            padding: 40px;
+            position: relative;
+            animation: slideIn 0.6s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: var(--dark);
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 700;
+            text-shadow: 2px 2px 0px var(--accent);
+        }
+
+        h2 {
+            font-size: 1.8rem;
+            color: var(--dark);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 1.1rem;
+        }
+
+        .mode-selector {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            justify-content: center;
+        }
+
+        .mode-btn {
+            flex: 1;
+            max-width: 300px;
+            padding: 30px;
+            border: none;
+            border-radius: 16px;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mode-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .mode-btn:hover::before {
+            left: 100%;
+        }
+
+        .mode-btn.editor {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .mode-btn.player {
+            background: linear-gradient(135deg, var(--green), var(--blue));
+            color: white;
+        }
+
+        .mode-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin: 30px 0;
+            perspective: 1000px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            position: relative;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+        }
+
+        .cell.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .cell.highlighted {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .cell-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            font-size: 0.85rem;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .cell-front {
+            background: var(--primary);
+            color: white;
+        }
+
+        .cell-back {
+            background: var(--dark);
+            color: white;
+            transform: rotateY(180deg);
+        }
+
+        .points-badge {
+            background: var(--accent);
+            color: var(--dark);
+            padding: 4px 12px;
+            border-radius: 20px;
+            margin-top: 8px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .points-button {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .points-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .points-button:active {
+            transform: translateY(0);
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--dark);
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .color-option {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 3px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .color-option:hover {
+            transform: scale(1.1);
+        }
+
+        .color-option.selected {
+            border-color: var(--dark);
+            box-shadow: 0 0 0 3px rgba(44, 62, 80, 0.3);
+        }
+
+        .btn {
+            padding: 14px 32px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Fredoka', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--green), var(--blue));
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .dice {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--dark);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+            border: 3px solid var(--primary);
+            font-family: 'Space Mono', monospace;
+        }
+
+        .dice.rolling {
+            animation: roll 0.5s ease-in-out;
+        }
+
+        @keyframes roll {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(90deg); }
+            50% { transform: rotate(180deg); }
+            75% { transform: rotate(270deg); }
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 20px 0;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .timer.warning {
+            color: #e74c3c;
+            animation: timerPulse 0.5s infinite;
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .scoreboard {
+            background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+        }
+
+        .player-score {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+        .player-score.active {
+            background: linear-gradient(135deg, var(--accent), #ffd700);
+            box-shadow: 0 4px 12px rgba(255, 210, 63, 0.4);
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: none;
+            border: 2px solid var(--dark);
+            color: var(--dark);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Fredoka', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: var(--dark);
+            color: white;
+        }
+
+        .editor-grid {
+            margin-top: 30px;
+        }
+
+        .cell-editor {
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+        }
+
+        .cell-editor h3 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .cell-preview {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .preview-card {
+            flex: 1;
+            padding: 20px;
+            border-radius: 12px;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .game-status {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+        }
+
+        .winner-announcement {
+            background: linear-gradient(135deg, var(--accent), #ffd700);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 20px 0;
+            animation: celebrate 0.6s ease-out;
+        }
+
+        @keyframes celebrate {
+            0% { transform: scale(0.8); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .winner-announcement h2 {
+            font-size: 2.5rem;
+            color: var(--dark);
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .grid {
+                gap: 8px;
+            }
+
+            .cell-face {
+                font-size: 0.7rem;
+                padding: 5px;
+            }
+
+            .dice {
+                width: 60px;
+                height: 60px;
+                font-size: 2rem;
+            }
+
+            .mode-selector {
+                flex-direction: column;
+            }
+
+            .mode-btn {
+                max-width: 100%;
+            }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Home Screen -->
+        <div id="home-screen">
+            <h1>🎲 Roll and Retrieve Board Game</h1>
+            <p class="subtitle">Choose your mode to get started</p>
+            
+            <div class="mode-selector">
+                <button class="mode-btn editor" onclick="startEditor()">
+                    📝 Teacher Mode<br>
+                    <small style="font-size: 0.9rem; opacity: 0.9;">Edit Questions & Answers</small>
+                </button>
+                <button class="mode-btn player" onclick="startGame()">
+                    🎮 Student Mode<br>
+                    <small style="font-size: 0.9rem; opacity: 0.9;">Play the Game</small>
+                </button>
+            </div>
+        </div>
+
+        <!-- Editor Mode -->
+        <div id="editor-screen" class="hidden">
+            <button class="back-btn" onclick="goHome()">← Back</button>
+            <h1>📝 Teacher Editor</h1>
+            <p class="subtitle">Create your game board</p>
+
+            <div style="background: linear-gradient(135deg, #f5f5f5, #e8e8e8); padding: 20px; border-radius: 12px; margin-bottom: 30px;">
+                <h3 style="color: var(--dark); margin-bottom: 15px;">📊 Import from Spreadsheet</h3>
+                <p style="color: #555; margin-bottom: 15px; font-size: 0.95rem;">
+                    Upload a CSV or Excel file with columns: <strong>Cell | Question | Answer | Color | Points</strong><br>
+                    Colors: green, silver, gold, blue, red, purple
+                </p>
+                <input type="file" id="import-file" accept=".csv,.xlsx,.xls" style="margin-bottom: 10px;">
+                <button class="btn btn-secondary" onclick="importSpreadsheet()">📥 Import Data</button>
+                <button class="btn btn-primary" onclick="downloadTemplate()" style="background: linear-gradient(135deg, var(--purple), var(--blue));">📄 Download Template</button>
+            </div>
+
+            <div id="editor-content"></div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-primary" onclick="saveBoard()">💾 Save Board</button>
+            </div>
+        </div>
+
+        <!-- Game Setup -->
+        <div id="game-setup" class="hidden">
+            <button class="back-btn" onclick="goHome()">← Back</button>
+            <h1>🎮 Game Setup</h1>
+            <p class="subtitle">Configure your game</p>
+
+            <div class="form-section">
+                <label>Number of Players (1-4):</label>
+                <select id="num-players" onchange="updatePlayerInputs()">
+                    <option value="1">1 Player</option>
+                    <option value="2">2 Players</option>
+                    <option value="3">3 Players</option>
+                    <option value="4">4 Players</option>
+                </select>
+            </div>
+
+            <div id="player-names"></div>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn btn-primary" onclick="startPlaying()">🎲 Start Game</button>
+            </div>
+        </div>
+
+        <!-- Game Play -->
+        <div id="game-play" class="hidden">
+            <button class="back-btn" onclick="goHome()">← Back</button>
+            <h1>🎲 Play the Game</h1>
+
+            <div class="scoreboard" id="scoreboard"></div>
+
+            <div class="game-status" id="game-status">Press "Roll Dice" to start!</div>
+
+            <div style="text-align: center;">
+                <button class="btn btn-primary" id="roll-btn" onclick="rollDice()">🎲 Roll Dice</button>
+            </div>
+
+            <div class="dice-container" id="dice-container" class="hidden">
+                <div>
+                    <div style="text-align: center; font-weight: 600; color: var(--dark); margin-bottom: 5px;">Column (X)</div>
+                    <div class="dice" id="dice1">?</div>
+                </div>
+                <div>
+                    <div style="text-align: center; font-weight: 600; color: var(--dark); margin-bottom: 5px;">Row (Y)</div>
+                    <div class="dice" id="dice2">?</div>
+                </div>
+            </div>
+
+            <div class="timer hidden" id="timer">30</div>
+
+            <div class="grid" id="game-grid"></div>
+
+            <div id="winner-screen" class="hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game data
+        let boardData = [];
+        let players = [];
+        let currentPlayerIndex = 0;
+        let usedCells = [];
+        let timerInterval = null;
+        let currentCell = null;
+
+        // Color options
+        const colors = {
+            green: '#06A77D',
+            silver: '#95A5A6',
+            gold: '#F39C12',
+            blue: '#3498DB',
+            red: '#E74C3C',
+            purple: '#9B59B6'
+        };
+
+        // Initialize board data
+        function initBoardData() {
+            boardData = [];
+            for (let i = 0; i < 36; i++) {
+                boardData.push({
+                    row: Math.floor(i / 6) + 1,
+                    col: (i % 6) + 1,
+                    frontText: '',
+                    frontColor: colors.green,
+                    backText: '',
+                    points: 10
+                });
+            }
+        }
+
+        // Home navigation
+        function goHome() {
+            document.querySelectorAll('.container > div').forEach(div => div.classList.add('hidden'));
+            document.getElementById('home-screen').classList.remove('hidden');
+        }
+
+        // Start Editor
+        function startEditor() {
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('editor-screen').classList.remove('hidden');
+            
+            // Load saved board or initialize new one
+            const saved = localStorage.getItem('boardData');
+            if (saved) {
+                boardData = JSON.parse(saved);
+            } else {
+                initBoardData();
+            }
+            
+            renderEditor();
+        }
+
+        // Render editor
+        function renderEditor() {
+            const content = document.getElementById('editor-content');
+            content.innerHTML = '';
+
+            boardData.forEach((cell, index) => {
+                const editor = document.createElement('div');
+                editor.className = 'cell-editor';
+                editor.innerHTML = `
+                    <h3>Cell ${cell.row}-${cell.col}</h3>
+                    
+                    <div class="form-section">
+                        <label>Front Text (Question):</label>
+                        <textarea id="front-${index}" placeholder="Enter the question...">${cell.frontText}</textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label>Front Color:</label>
+                        <div class="color-picker" data-cell-index="${index}">
+                            ${Object.entries(colors).map(([name, color]) => `
+                                <div class="color-option ${cell.frontColor === color ? 'selected' : ''}" 
+                                     style="background: ${color}"
+                                     data-color="${color}">
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <label>Back Text (Answer):</label>
+                        <textarea id="back-${index}" placeholder="Enter the answer...">${cell.backText}</textarea>
+                    </div>
+
+                    <div class="form-section">
+                        <label>Points:</label>
+                        <input type="number" id="points-${index}" value="${cell.points}" min="1" max="100">
+                    </div>
+                `;
+                content.appendChild(editor);
+            });
+
+            // Add event listeners to color pickers after rendering
+            document.querySelectorAll('.color-picker').forEach(picker => {
+                const cellIndex = parseInt(picker.getAttribute('data-cell-index'));
+                picker.querySelectorAll('.color-option').forEach(option => {
+                    option.addEventListener('click', function() {
+                        const color = this.getAttribute('data-color');
+                        selectColor(cellIndex, color);
+                    });
+                });
+            });
+        }
+
+        // Select color
+        function selectColor(index, color) {
+            boardData[index].frontColor = color;
+            
+            // Update only the visual elements for this specific cell
+            const picker = document.querySelector(`.color-picker[data-cell-index="${index}"]`);
+            picker.querySelectorAll('.color-option').forEach(option => {
+                if (option.getAttribute('data-color') === color) {
+                    option.classList.add('selected');
+                } else {
+                    option.classList.remove('selected');
+                }
+            });
+        }
+
+        // Color name to hex mapping
+        const colorNameMap = {
+            'green': '#06A77D',
+            'silver': '#95A5A6',
+            'gold': '#F39C12',
+            'blue': '#3498DB',
+            'red': '#E74C3C',
+            'purple': '#9B59B6'
+        };
+
+        // Download template spreadsheet
+        function downloadTemplate() {
+            // Create template data with columns: Cell, Question, Answer, Color, Points
+            const templateData = [];
+            
+            // Header row
+            templateData.push(['Cell', 'Question', 'Answer', 'Color', 'Points']);
+            
+            // Create 36 rows (one for each cell)
+            for (let i = 0; i < 36; i++) {
+                const row = Math.floor(i / 6) + 1;
+                const col = (i % 6) + 1;
+                templateData.push([
+                    `${row}-${col}`,  // Cell identifier
+                    '',               // Question (blank)
+                    '',               // Answer (blank)
+                    'green',          // Color (default)
+                    10                // Points (default)
+                ]);
+            }
+            
+            // Create workbook
+            const ws = XLSX.utils.aoa_to_sheet(templateData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Game Board");
+            
+            // Download
+            XLSX.writeFile(wb, "board-game-template.xlsx");
+        }
+
+        // Import spreadsheet
+        function importSpreadsheet() {
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('⚠️ Please select a file first!');
+                return;
+            }
+            
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    
+                    // Get first sheet
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                    
+                    // Validate data (should have header + at least 1 row)
+                    if (jsonData.length < 2) {
+                        alert('⚠️ Invalid file format! Please use the template.');
+                        return;
+                    }
+                    
+                    // Check header format
+                    const header = jsonData[0];
+                    if (!header.includes('Question') || !header.includes('Answer')) {
+                        alert('⚠️ Invalid file format! Please use the template with columns: Cell, Question, Answer, Color, Points');
+                        return;
+                    }
+                    
+                    // Parse each row (skip header row)
+                    for (let i = 1; i < jsonData.length && i <= 36; i++) {
+                        const row = jsonData[i];
+                        const cellIndex = i - 1; // 0-based index
+                        
+                        // Column indices: Cell=0, Question=1, Answer=2, Color=3, Points=4
+                        boardData[cellIndex].frontText = row[1] || '';
+                        boardData[cellIndex].backText = row[2] || '';
+                        
+                        // Convert color name to hex
+                        const colorName = (row[3] || 'green').toLowerCase().trim();
+                        boardData[cellIndex].frontColor = colorNameMap[colorName] || colors.green;
+                        
+                        boardData[cellIndex].points = parseInt(row[4]) || 10;
+                    }
+                    
+                    // Re-render editor with imported data
+                    renderEditor();
+                    
+                    alert('✅ Data imported successfully! Review and save your board.');
+                    
+                    // Scroll to editor content
+                    document.getElementById('editor-content').scrollIntoView({ behavior: 'smooth' });
+                    
+                } catch (error) {
+                    console.error('Import error:', error);
+                    alert('⚠️ Error reading file. Please make sure it matches the template format.');
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Save board
+        function saveBoard() {
+            // Collect all data
+            boardData.forEach((cell, index) => {
+                cell.frontText = document.getElementById(`front-${index}`).value;
+                cell.backText = document.getElementById(`back-${index}`).value;
+                cell.points = parseInt(document.getElementById(`points-${index}`).value) || 10;
+            });
+
+            localStorage.setItem('boardData', JSON.stringify(boardData));
+            
+            // Generate shareable URL
+            const encodedData = btoa(encodeURIComponent(JSON.stringify(boardData)));
+            
+            // Build full URL properly
+            const protocol = window.location.protocol || 'https:';
+            const host = window.location.host;
+            const pathname = window.location.pathname;
+            
+            let shareUrl;
+            if (host) {
+                // Normal web hosting
+                shareUrl = `${protocol}//${host}${pathname}?game=${encodedData}`;
+            } else {
+                // Fallback - ask user to enter their URL
+                shareUrl = `[YOUR-GITHUB-URL]${pathname}?game=${encodedData}`;
+            }
+            
+            // Show shareable URL to teacher
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                padding: 20px;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 16px;
+                    padding: 30px;
+                    max-width: 600px;
+                    width: 100%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                ">
+                    <h2 style="color: var(--dark); margin-bottom: 20px;">✅ Board Saved!</h2>
+                    <p style="margin-bottom: 15px; color: #555;">Your game is ready! Copy this link and share it with your students:</p>
+                    <div style="
+                        background: #f5f5f5;
+                        padding: 15px;
+                        border-radius: 8px;
+                        word-break: break-all;
+                        font-family: monospace;
+                        font-size: 0.75rem;
+                        margin-bottom: 20px;
+                        border: 2px solid var(--primary);
+                        max-height: 200px;
+                        overflow-y: auto;
+                    " id="share-url">${shareUrl}</div>
+                    <p style="margin-bottom: 20px; color: #e74c3c; font-weight: 600; font-size: 0.9rem;">
+                        ⚠️ This link is very long! Use the "Copy Link" button - don't try to copy manually.
+                    </p>
+                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                        <button onclick="copyShareUrl()" class="btn btn-primary">📋 Copy Link</button>
+                        <button onclick="closeModal()" class="btn btn-secondary">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            window.currentModal = modal;
+            window.currentShareUrl = shareUrl;
+        }
+        
+        function copyShareUrl() {
+            navigator.clipboard.writeText(window.currentShareUrl).then(() => {
+                alert('✅ Link copied to clipboard! Share it with your students.');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = window.currentShareUrl;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('✅ Link copied to clipboard! Share it with your students.');
+            });
+        }
+        
+        function closeModal() {
+            if (window.currentModal) {
+                document.body.removeChild(window.currentModal);
+                window.currentModal = null;
+            }
+        }
+
+        // Start game setup
+        function startGame() {
+            // Check if game data is in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const gameData = urlParams.get('game');
+            
+            if (gameData) {
+                // Load game from URL
+                try {
+                    const decoded = decodeURIComponent(atob(gameData));
+                    boardData = JSON.parse(decoded);
+                } catch (e) {
+                    alert('⚠️ Invalid game link! Please check the URL.');
+                    return;
+                }
+            } else {
+                // Check if board exists in local storage
+                const saved = localStorage.getItem('boardData');
+                if (!saved) {
+                    alert('⚠️ No board found! Please create a board in Teacher Mode first.');
+                    return;
+                }
+                boardData = JSON.parse(saved);
+            }
+            
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('game-setup').classList.remove('hidden');
+            updatePlayerInputs();
+        }
+
+        // Update player inputs
+        function updatePlayerInputs() {
+            const num = parseInt(document.getElementById('num-players').value);
+            const container = document.getElementById('player-names');
+            container.innerHTML = '';
+
+            for (let i = 0; i < num; i++) {
+                const div = document.createElement('div');
+                div.className = 'form-section';
+                div.innerHTML = `
+                    <label>Player ${i + 1} Name:</label>
+                    <input type="text" id="player-${i}" placeholder="Enter name..." value="Player ${i + 1}">
+                `;
+                container.appendChild(div);
+            }
+        }
+
+        // Start playing
+        function startPlaying() {
+            const numPlayers = parseInt(document.getElementById('num-players').value);
+            players = [];
+
+            for (let i = 0; i < numPlayers; i++) {
+                const name = document.getElementById(`player-${i}`).value || `Player ${i + 1}`;
+                players.push({ name, score: 0 });
+            }
+
+            currentPlayerIndex = 0;
+            usedCells = [];
+
+            document.getElementById('game-setup').classList.add('hidden');
+            document.getElementById('game-play').classList.remove('hidden');
+
+            renderGameBoard();
+            updateScoreboard();
+        }
+
+        // Render game board
+        function renderGameBoard() {
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = '';
+
+            boardData.forEach((cell, index) => {
+                const cellDiv = document.createElement('div');
+                cellDiv.className = 'cell';
+                cellDiv.id = `cell-${index}`;
+                cellDiv.innerHTML = `
+                    <div class="cell-face cell-front" style="background: ${cell.frontColor}">
+                        ${cell.frontText}
+                    </div>
+                    <div class="cell-face cell-back">
+                        <div style="flex: 1; display: flex; align-items: center; justify-content: center;">${cell.backText}</div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button class="points-button" data-points="0" style="background: #e74c3c;">0</button>
+                            <button class="points-button" data-points="${cell.points}" style="background: var(--green);">${cell.points}</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(cellDiv);
+            });
+        }
+
+        // Update scoreboard
+        function updateScoreboard() {
+            const scoreboard = document.getElementById('scoreboard');
+            scoreboard.innerHTML = '<h3 style="margin-bottom: 10px;">Scoreboard</h3>';
+
+            players.forEach((player, index) => {
+                const div = document.createElement('div');
+                div.className = 'player-score' + (index === currentPlayerIndex ? ' active' : '');
+                div.innerHTML = `
+                    <span>${player.name}</span>
+                    <span style="font-family: 'Space Mono', monospace;">${player.score} pts</span>
+                `;
+                scoreboard.appendChild(div);
+            });
+        }
+
+        // Roll dice
+        function rollDice() {
+            if (usedCells.length >= 36) {
+                endGame();
+                return;
+            }
+
+            // Disable roll button
+            document.getElementById('roll-btn').disabled = true;
+
+            // Show dice
+            document.getElementById('dice-container').classList.remove('hidden');
+
+            // Animate rolling
+            const dice1 = document.getElementById('dice1');
+            const dice2 = document.getElementById('dice2');
+            
+            dice1.classList.add('rolling');
+            dice2.classList.add('rolling');
+
+            let attempts = 0;
+            let x, y, cellIndex;
+
+            function tryRoll() {
+                x = Math.floor(Math.random() * 6) + 1;  // Column (X)
+                y = Math.floor(Math.random() * 6) + 1;  // Row (Y)
+                cellIndex = (y - 1) * 6 + (x - 1);  // Calculate cell: row * 6 + column
+
+                if (usedCells.includes(cellIndex)) {
+                    attempts++;
+                    if (attempts < 10) {
+                        setTimeout(tryRoll, 100);
+                    } else {
+                        // Find first unused cell
+                        for (let i = 0; i < 36; i++) {
+                            if (!usedCells.includes(i)) {
+                                cellIndex = i;
+                                y = Math.floor(i / 6) + 1;  // Row
+                                x = (i % 6) + 1;  // Column
+                                break;
+                            }
+                        }
+                        finishRoll();
+                    }
+                } else {
+                    finishRoll();
+                }
+            }
+
+            function finishRoll() {
+                setTimeout(() => {
+                    dice1.textContent = x;  // Show column (X)
+                    dice2.textContent = y;  // Show row (Y)
+                    dice1.classList.remove('rolling');
+                    dice2.classList.remove('rolling');
+
+                    // Highlight cell
+                    const cell = document.getElementById(`cell-${cellIndex}`);
+                    cell.classList.add('highlighted');
+                    currentCell = cellIndex;
+
+                    // Update status
+                    document.getElementById('game-status').textContent = 
+                        `${players[currentPlayerIndex].name}'s turn! Column ${x}, Row ${y}`;
+
+                    // Start timer
+                    startTimer();
+                }, 600);
+            }
+
+            tryRoll();
+        }
+
+        // Start timer
+        function startTimer() {
+            let timeLeft = 30;
+            const timerEl = document.getElementById('timer');
+            timerEl.classList.remove('hidden');
+            timerEl.classList.remove('warning');
+            timerEl.textContent = timeLeft;
+
+            // Enable cell click after 5 seconds
+            setTimeout(() => {
+                enableCellClick();
+            }, 5000);
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = timeLeft;
+
+                if (timeLeft <= 10) {
+                    timerEl.classList.add('warning');
+                }
+
+                if (timeLeft <= 0) {
+                    stopTimer();
+                }
+            }, 1000);
+        }
+
+        // Stop timer
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            document.getElementById('timer').classList.add('hidden');
+        }
+
+        // Enable cell click
+        function enableCellClick() {
+            const cell = document.getElementById(`cell-${currentCell}`);
+            cell.classList.remove('highlighted');
+            
+            document.getElementById('game-status').textContent = 
+                `You can now click the cell to reveal the answer!`;
+
+            cell.style.cursor = 'pointer';
+            cell.onclick = function() {
+                this.classList.add('flipped');
+                this.onclick = null;
+                
+                // Stop the timer when cell is clicked
+                stopTimer();
+                
+                document.getElementById('game-status').textContent = 
+                    `Click a point button to award points!`;
+                
+                // Add click handlers to point buttons
+                const pointButtons = this.querySelectorAll('.points-button');
+                pointButtons.forEach(button => {
+                    button.onclick = function(e) {
+                        e.stopPropagation();
+                        const points = parseInt(this.getAttribute('data-points'));
+                        
+                        // Award points
+                        players[currentPlayerIndex].score += points;
+                        
+                        // Mark as used
+                        usedCells.push(currentCell);
+                        
+                        // Disable buttons
+                        pointButtons.forEach(btn => btn.disabled = true);
+                        
+                        // Visual feedback
+                        this.style.transform = 'scale(1.1)';
+                        this.style.boxShadow = '0 0 20px rgba(255, 255, 255, 0.8)';
+                        
+                        // Update scoreboard
+                        updateScoreboard();
+                        
+                        // Next player
+                        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+                        
+                        // Update status
+                        setTimeout(() => {
+                            document.getElementById('game-status').textContent = 
+                                `${players[currentPlayerIndex].name}'s turn! Press "Roll Dice"`;
+                            document.getElementById('roll-btn').disabled = false;
+                            document.getElementById('dice-container').classList.add('hidden');
+                        }, 800);
+                    };
+                });
+            };
+        }
+
+        // End game
+        function endGame() {
+            document.getElementById('game-status').classList.add('hidden');
+            document.getElementById('roll-btn').classList.add('hidden');
+
+            // Find winner
+            let maxScore = Math.max(...players.map(p => p.score));
+            let winners = players.filter(p => p.score === maxScore);
+
+            const winnerScreen = document.getElementById('winner-screen');
+            winnerScreen.classList.remove('hidden');
+
+            if (winners.length === 1) {
+                winnerScreen.innerHTML = `
+                    <div class="winner-announcement">
+                        <h2>🏆 ${winners[0].name} Wins!</h2>
+                        <p style="font-size: 1.5rem; margin-top: 10px;">Final Score: ${winners[0].score} points</p>
+                        <button class="btn btn-primary" onclick="goHome()" style="margin-top: 20px;">
+                            🏠 Back to Home
+                        </button>
+                    </div>
+                `;
+            } else {
+                winnerScreen.innerHTML = `
+                    <div class="winner-announcement">
+                        <h2>🏆 It's a Tie!</h2>
+                        <p style="font-size: 1.5rem; margin-top: 10px;">
+                            ${winners.map(w => w.name).join(' & ')} - ${maxScore} points each!
+                        </p>
+                        <button class="btn btn-primary" onclick="goHome()" style="margin-top: 20px;">
+                            🏠 Back to Home
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            // Check if there's a game in the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const gameData = urlParams.get('game');
+            
+            if (gameData) {
+                // Auto-load the game for students
+                try {
+                    const decoded = decodeURIComponent(atob(gameData));
+                    boardData = JSON.parse(decoded);
+                    // Go directly to game setup for students
+                    startGame();
+                } catch (e) {
+                    // Invalid game data, show home screen
+                    goHome();
+                }
+            } else {
+                // Show home screen
+                goHome();
+            }
+        };
+    </script>
+</body>
+</html>
