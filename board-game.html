@@ -894,9 +894,13 @@
                     }
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
             .then(data => {
                 closeModal();
+                console.log('Response data:', data);
                 
                 if (data.id) {
                     // Build shareable URL with Gist ID
@@ -912,14 +916,17 @@
                     }
                     
                     showShareModal(shareUrl);
+                } else if (data.message) {
+                    // GitHub API returned an error message
+                    alert('⚠️ GitHub API Error: ' + data.message + '\n\nPlease try again in a few minutes.');
                 } else {
                     alert('⚠️ Error creating shareable link. Please try again.');
                 }
             })
             .catch(error => {
                 closeModal();
-                console.error('Error:', error);
-                alert('⚠️ Error creating shareable link. Please check your internet connection and try again.');
+                console.error('Fetch error:', error);
+                alert('⚠️ Error creating shareable link. Please check your internet connection and try again.\n\nError: ' + error.message);
             });
         }
         
