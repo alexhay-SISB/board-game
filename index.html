@@ -547,9 +547,9 @@
                     📝 Teacher Mode<br>
                     <small style="font-size: 0.9rem; opacity: 0.9;">Edit Questions & Answers</small>
                 </button>
-                <button class="mode-btn player" onclick="startGame()">
+                <button class="mode-btn player" onclick="showGameCodeInput()">
                     🎮 Student Mode<br>
-                    <small style="font-size: 0.9rem; opacity: 0.9;">Play the Game</small>
+                    <small style="font-size: 0.9rem; opacity: 0.9;">Enter Game Code</small>
                 </button>
             </div>
         </div>
@@ -875,95 +875,14 @@
 
             localStorage.setItem('boardData', JSON.stringify(boardData));
             
-            // Show loading message
-            const loadingModal = showLoadingModal();
+            // Generate a game code
+            const gameCode = btoa(JSON.stringify(boardData));
             
-            // Upload to GitHub Gist (anonymous, public)
-            fetch('https://api.github.com/gists', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    description: 'Roll and Retrieve Board Game Data',
-                    public: true,
-                    files: {
-                        'game-data.json': {
-                            content: JSON.stringify(boardData)
-                        }
-                    }
-                })
-            })
-            .then(response => {
-                console.log('Response status:', response.status);
-                return response.json();
-            })
-            .then(data => {
-                closeModal();
-                console.log('Response data:', data);
-                
-                if (data.id) {
-                    // Build shareable URL with Gist ID
-                    const protocol = window.location.protocol || 'https:';
-                    const host = window.location.host;
-                    const pathname = window.location.pathname;
-                    
-                    let shareUrl;
-                    if (host) {
-                        shareUrl = `${protocol}//${host}${pathname}?game=${data.id}`;
-                    } else {
-                        shareUrl = `https://alexhay-sisb.github.io/board-game/?game=${data.id}`;
-                    }
-                    
-                    showShareModal(shareUrl);
-                } else if (data.message) {
-                    // GitHub API returned an error message
-                    alert('⚠️ GitHub API Error: ' + data.message + '\n\nPlease try again in a few minutes.');
-                } else {
-                    alert('⚠️ Error creating shareable link. Please try again.');
-                }
-            })
-            .catch(error => {
-                closeModal();
-                console.error('Fetch error:', error);
-                alert('⚠️ Error creating shareable link. Please check your internet connection and try again.\n\nError: ' + error.message);
-            });
+            // Show instructions modal
+            showGameCodeModal(gameCode);
         }
         
-        function showLoadingModal() {
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed;
-                top: 0;
-                left: 0;
-                right: 0;
-                bottom: 0;
-                background: rgba(0, 0, 0, 0.8);
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 10000;
-            `;
-            
-            modal.innerHTML = `
-                <div style="
-                    background: white;
-                    border-radius: 16px;
-                    padding: 40px;
-                    text-align: center;
-                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-                ">
-                    <h2 style="color: var(--dark); margin-bottom: 20px;">⏳ Creating shareable link...</h2>
-                    <p style="color: #555;">Please wait a moment</p>
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-            window.currentModal = modal;
-            return modal;
-        }
-        
-        function showShareModal(shareUrl) {
+        function showGameCodeModal(gameCode) {
             const modal = document.createElement('div');
             modal.style.cssText = `
                 position: fixed;
@@ -984,26 +903,46 @@
                     background: white;
                     border-radius: 16px;
                     padding: 30px;
-                    max-width: 600px;
+                    max-width: 700px;
                     width: 100%;
                     max-height: 80vh;
                     overflow-y: auto;
                     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
                 ">
                     <h2 style="color: var(--dark); margin-bottom: 20px;">✅ Board Saved!</h2>
-                    <p style="margin-bottom: 15px; color: #555; font-weight: 600;">Your game is ready! Share this link with your students:</p>
-                    <div style="
-                        background: #f5f5f5;
-                        padding: 15px;
-                        border-radius: 8px;
-                        word-break: break-all;
-                        font-family: monospace;
-                        font-size: 0.9rem;
-                        margin-bottom: 20px;
-                        border: 2px solid var(--primary);
-                    " id="share-url">${shareUrl}</div>
-                    <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                        <button onclick="copyShareUrl()" class="btn btn-primary">📋 Copy Link</button>
+                    
+                    <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--blue);">
+                        <h3 style="margin-bottom: 15px; color: var(--dark);">📋 Share with Students</h3>
+                        <p style="color: #555; margin-bottom: 15px; line-height: 1.6;">
+                            <strong>Instructions for students:</strong><br>
+                            1. Go to: <strong>https://alexhay-sisb.github.io/board-game/</strong><br>
+                            2. Click "🎮 Student Mode"<br>
+                            3. Click "Enter Game Code"<br>
+                            4. Paste this code:<br>
+                        </p>
+                        <div style="
+                            background: white;
+                            padding: 15px;
+                            border-radius: 8px;
+                            font-family: monospace;
+                            font-size: 0.75rem;
+                            word-break: break-all;
+                            border: 2px solid var(--primary);
+                            max-height: 150px;
+                            overflow-y: auto;
+                            margin-bottom: 15px;
+                        " id="game-code">${gameCode}</div>
+                        <button onclick="copyGameCode()" class="btn btn-primary" style="width: 100%;">📋 Copy Game Code</button>
+                    </div>
+                    
+                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--secondary);">
+                        <h3 style="margin-bottom: 10px; color: var(--dark);">💡 Tip</h3>
+                        <p style="color: #555; line-height: 1.6;">
+                            Share the game code via email, Google Classroom, or any messaging app. Students just need to copy and paste it!
+                        </p>
+                    </div>
+                    
+                    <div style="text-align: center;">
                         <button onclick="closeModal()" class="btn btn-secondary">Close</button>
                     </div>
                 </div>
@@ -1011,21 +950,20 @@
             
             document.body.appendChild(modal);
             window.currentModal = modal;
-            window.currentShareUrl = shareUrl;
+            window.currentGameCode = gameCode;
         }
         
-        function copyShareUrl() {
-            navigator.clipboard.writeText(window.currentShareUrl).then(() => {
-                alert('✅ Link copied to clipboard! Share it with your students.');
+        function copyGameCode() {
+            navigator.clipboard.writeText(window.currentGameCode).then(() => {
+                alert('✅ Game code copied! Share it with your students.');
             }).catch(() => {
-                // Fallback for older browsers
                 const textArea = document.createElement('textarea');
-                textArea.value = window.currentShareUrl;
+                textArea.value = window.currentGameCode;
                 document.body.appendChild(textArea);
                 textArea.select();
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
-                alert('✅ Link copied to clipboard! Share it with your students.');
+                alert('✅ Game code copied! Share it with your students.');
             });
         }
         
@@ -1036,51 +974,104 @@
             }
         }
 
+        // Show game code input for students
+        function showGameCodeInput() {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                padding: 20px;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 16px;
+                    padding: 30px;
+                    max-width: 500px;
+                    width: 100%;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                ">
+                    <h2 style="color: var(--dark); margin-bottom: 20px;">🎮 Enter Game Code</h2>
+                    <p style="color: #555; margin-bottom: 20px;">Paste the game code your teacher gave you:</p>
+                    
+                    <textarea id="game-code-input" placeholder="Paste game code here..." style="
+                        width: 100%;
+                        min-height: 150px;
+                        padding: 15px;
+                        border: 2px solid #ddd;
+                        border-radius: 8px;
+                        font-family: monospace;
+                        font-size: 0.9rem;
+                        margin-bottom: 20px;
+                        resize: vertical;
+                    "></textarea>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button onclick="loadGameFromCode()" class="btn btn-primary">✅ Load Game</button>
+                        <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            window.currentModal = modal;
+        }
+        
+        function loadGameFromCode() {
+            const codeInput = document.getElementById('game-code-input');
+            const gameCode = codeInput.value.trim();
+            
+            if (!gameCode) {
+                alert('⚠️ Please paste a game code!');
+                return;
+            }
+            
+            try {
+                const decodedData = atob(gameCode);
+                boardData = JSON.parse(decodedData);
+                
+                if (!boardData || boardData.length !== 36) {
+                    throw new Error('Invalid game data');
+                }
+                
+                closeModal();
+                startGame();
+            } catch (error) {
+                alert('⚠️ Invalid game code! Please check with your teacher and try again.');
+                console.error('Error loading game code:', error);
+            }
+        }
+
         // Start game setup
         function startGame() {
-            // Check if game data is in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const gameId = urlParams.get('game');
-            
-            if (gameId) {
-                // Load game from GitHub Gist
-                showLoadingModal();
-                
-                fetch(`https://api.github.com/gists/${gameId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        closeModal();
-                        
-                        if (data.files && data.files['game-data.json']) {
-                            const content = data.files['game-data.json'].content;
-                            boardData = JSON.parse(content);
-                            
-                            // Continue to game setup
-                            document.getElementById('home-screen').classList.add('hidden');
-                            document.getElementById('game-setup').classList.remove('hidden');
-                            updatePlayerInputs();
-                        } else {
-                            alert('⚠️ Invalid game link! Please check with your teacher.');
-                        }
-                    })
-                    .catch(error => {
-                        closeModal();
-                        console.error('Error loading game:', error);
-                        alert('⚠️ Could not load game. Please check your internet connection and try again.');
-                    });
-            } else {
-                // Check if board exists in local storage
-                const saved = localStorage.getItem('boardData');
-                if (!saved) {
-                    alert('⚠️ No board found! Please create a board in Teacher Mode first or use a game link from your teacher.');
-                    return;
-                }
-                boardData = JSON.parse(saved);
-                
+            // Check if we already have boardData loaded (from embedded data or URL)
+            if (boardData && boardData.length === 36) {
                 document.getElementById('home-screen').classList.add('hidden');
                 document.getElementById('game-setup').classList.remove('hidden');
                 updatePlayerInputs();
+                return;
             }
+            
+            // Check if board exists in local storage
+            const saved = localStorage.getItem('boardData');
+            if (!saved) {
+                alert('⚠️ No board found! Please create a board in Teacher Mode first or use a game file from your teacher.');
+                return;
+            }
+            boardData = JSON.parse(saved);
+            
+            document.getElementById('home-screen').classList.add('hidden');
+            document.getElementById('game-setup').classList.remove('hidden');
+            updatePlayerInputs();
         }
 
         // Update player inputs
@@ -1366,40 +1357,8 @@
 
         // Initialize on load
         window.onload = function() {
-            // Check if there's a game in the URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const gameId = urlParams.get('game');
-            
-            if (gameId) {
-                // Auto-load the game for students from GitHub Gist
-                showLoadingModal();
-                
-                fetch(`https://api.github.com/gists/${gameId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        closeModal();
-                        
-                        if (data.files && data.files['game-data.json']) {
-                            const content = data.files['game-data.json'].content;
-                            boardData = JSON.parse(content);
-                            
-                            // Go directly to game setup for students
-                            startGame();
-                        } else {
-                            goHome();
-                            alert('⚠️ Invalid game link! Please check with your teacher.');
-                        }
-                    })
-                    .catch(error => {
-                        closeModal();
-                        goHome();
-                        console.error('Error loading game:', error);
-                        alert('⚠️ Could not load game. Please check your internet connection.');
-                    });
-            } else {
-                // Show home screen
-                goHome();
-            }
+            // Just show home screen
+            goHome();
         };
     </script>
 </body>
