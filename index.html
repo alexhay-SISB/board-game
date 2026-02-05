@@ -875,8 +875,10 @@
 
             localStorage.setItem('boardData', JSON.stringify(boardData));
             
-            // Generate a game code
-            const gameCode = btoa(JSON.stringify(boardData));
+            // Generate a game code with proper encoding for special characters
+            const jsonString = JSON.stringify(boardData);
+            // Use encodeURIComponent to handle special characters, then btoa
+            const gameCode = btoa(encodeURIComponent(jsonString));
             
             // Show instructions modal
             showGameCodeModal(gameCode);
@@ -1036,7 +1038,9 @@
             }
             
             try {
-                const decodedData = atob(gameCode);
+                // Decode with proper handling of special characters
+                const decodedURI = atob(gameCode);
+                const decodedData = decodeURIComponent(decodedURI);
                 boardData = JSON.parse(decodedData);
                 
                 if (!boardData || boardData.length !== 36) {
