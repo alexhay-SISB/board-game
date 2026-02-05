@@ -1248,6 +1248,11 @@
 
                 if (timeLeft <= 0) {
                     stopTimer();
+                    // Remove highlight when timer ends
+                    const cell = document.getElementById(`cell-${currentCell}`);
+                    if (cell) {
+                        cell.classList.remove('highlighted');
+                    }
                 }
             }, 1000);
         }
@@ -1264,7 +1269,7 @@
         // Enable cell click
         function enableCellClick() {
             const cell = document.getElementById(`cell-${currentCell}`);
-            cell.classList.remove('highlighted');
+            // Don't remove highlighted class - keep it flashing
             
             document.getElementById('game-status').textContent = 
                 `You can now click the cell to reveal the answer!`;
@@ -1272,6 +1277,7 @@
             cell.style.cursor = 'pointer';
             cell.onclick = function() {
                 this.classList.add('flipped');
+                this.classList.remove('highlighted'); // Stop flashing when clicked
                 this.onclick = null;
                 
                 // Stop the timer when cell is clicked
