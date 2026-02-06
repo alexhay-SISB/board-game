@@ -607,6 +607,24 @@
             <h1>🎲 Play the Game</h1>
 
             <div class="scoreboard" id="scoreboard"></div>
+            
+            <div style="background: linear-gradient(135deg, #f5f5f5, #e8e8e8); padding: 15px; border-radius: 12px; margin: 20px 0;">
+                <h3 style="color: var(--dark); margin-bottom: 10px; font-size: 1rem;">📚 Question Categories:</h3>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 30px; height: 30px; background: #06A77D; border-radius: 6px;"></div>
+                        <span style="color: var(--dark); font-weight: 600;">Green = 1pt</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 30px; height: 30px; background: #95A5A6; border-radius: 6px;"></div>
+                        <span style="color: var(--dark); font-weight: 600;">Silver = 2pts</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="width: 30px; height: 30px; background: #F39C12; border-radius: 6px;"></div>
+                        <span style="color: var(--dark); font-weight: 600;">Gold = 4pts</span>
+                    </div>
+                </div>
+            </div>
 
             <div class="game-status" id="game-status">Press "Roll Dice" to start!</div>
 
@@ -913,8 +931,16 @@
                 ">
                     <h2 style="color: var(--dark); margin-bottom: 20px;">✅ Board Saved!</h2>
                     
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--green);">
+                        <h3 style="margin-bottom: 15px; color: var(--dark);">📥 Option 1: Download Game File (Recommended)</h3>
+                        <p style="color: #555; margin-bottom: 15px; line-height: 1.6;">
+                            Download a small file and share it with students. They upload it to play!
+                        </p>
+                        <button onclick="downloadGameJSON()" class="btn btn-primary" style="width: 100%;">💾 Download Game File (.json)</button>
+                    </div>
+                    
                     <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--blue);">
-                        <h3 style="margin-bottom: 15px; color: var(--dark);">📋 Share with Students</h3>
+                        <h3 style="margin-bottom: 15px; color: var(--dark);">📋 Option 2: Share Game Code</h3>
                         <p style="color: #555; margin-bottom: 15px; line-height: 1.6;">
                             <strong>Instructions for students:</strong><br>
                             1. Go to: <strong>https://alexhay-sisb.github.io/board-game/</strong><br>
@@ -930,21 +956,14 @@
                             font-size: 0.75rem;
                             word-break: break-all;
                             border: 2px solid var(--primary);
-                            max-height: 150px;
+                            max-height: 100px;
                             overflow-y: auto;
                             margin-bottom: 15px;
                         " id="game-code">${gameCode}</div>
-                        <button onclick="copyGameCode()" class="btn btn-primary" style="width: 100%;">📋 Copy Game Code</button>
+                        <button onclick="copyGameCode()" class="btn btn-secondary" style="width: 100%;">📋 Copy Game Code</button>
                     </div>
                     
-                    <div style="background: #fff3cd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--secondary);">
-                        <h3 style="margin-bottom: 10px; color: var(--dark);">💡 Tip</h3>
-                        <p style="color: #555; line-height: 1.6;">
-                            Share the game code via email, Google Classroom, or any messaging app. Students just need to copy and paste it!
-                        </p>
-                    </div>
-                    
-                    <div style="text-align: center;">
+                    <div style="text-align: center; margin-top: 20px;">
                         <button onclick="closeModal()" class="btn btn-secondary">Close</button>
                     </div>
                 </div>
@@ -953,6 +972,22 @@
             document.body.appendChild(modal);
             window.currentModal = modal;
             window.currentGameCode = gameCode;
+        }
+        
+        function downloadGameJSON() {
+            const gameData = JSON.stringify(boardData, null, 2);
+            const blob = new Blob([gameData], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const timestamp = new Date().toISOString().slice(0, 10);
+            const filename = `roll-and-retrieve-${timestamp}.json`;
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            alert('✅ Game file downloaded! Share this file with your students.');
         }
         
         function copyGameCode() {
@@ -998,27 +1033,47 @@
                     background: white;
                     border-radius: 16px;
                     padding: 30px;
-                    max-width: 500px;
+                    max-width: 600px;
                     width: 100%;
                     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
                 ">
-                    <h2 style="color: var(--dark); margin-bottom: 20px;">🎮 Enter Game Code</h2>
-                    <p style="color: #555; margin-bottom: 20px;">Paste the game code your teacher gave you:</p>
+                    <h2 style="color: var(--dark); margin-bottom: 20px;">🎮 Load Game</h2>
                     
-                    <textarea id="game-code-input" placeholder="Paste game code here..." style="
-                        width: 100%;
-                        min-height: 150px;
-                        padding: 15px;
-                        border: 2px solid #ddd;
-                        border-radius: 8px;
-                        font-family: monospace;
-                        font-size: 0.9rem;
-                        margin-bottom: 20px;
-                        resize: vertical;
-                    "></textarea>
+                    <div style="background: #e8f5e9; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--green);">
+                        <h3 style="margin-bottom: 15px; color: var(--dark);">📥 Option 1: Upload Game File (Recommended)</h3>
+                        <p style="color: #555; margin-bottom: 15px;">
+                            Upload the .json file your teacher gave you:
+                        </p>
+                        <input type="file" id="game-file-input" accept=".json" style="
+                            width: 100%;
+                            padding: 10px;
+                            border: 2px solid #ddd;
+                            border-radius: 8px;
+                            margin-bottom: 15px;
+                        ">
+                        <button onclick="loadGameFromFile()" class="btn btn-primary" style="width: 100%;">✅ Load from File</button>
+                    </div>
                     
-                    <div style="display: flex; gap: 10px; justify-content: center;">
-                        <button onclick="loadGameFromCode()" class="btn btn-primary">✅ Load Game</button>
+                    <div style="background: #f0f8ff; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid var(--blue);">
+                        <h3 style="margin-bottom: 15px; color: var(--dark);">📋 Option 2: Enter Game Code</h3>
+                        <p style="color: #555; margin-bottom: 15px;">
+                            Or paste the game code from your teacher:
+                        </p>
+                        <textarea id="game-code-input" placeholder="Paste game code here..." style="
+                            width: 100%;
+                            min-height: 100px;
+                            padding: 15px;
+                            border: 2px solid #ddd;
+                            border-radius: 8px;
+                            font-family: monospace;
+                            font-size: 0.9rem;
+                            margin-bottom: 15px;
+                            resize: vertical;
+                        "></textarea>
+                        <button onclick="loadGameFromCode()" class="btn btn-secondary" style="width: 100%;">✅ Load from Code</button>
+                    </div>
+                    
+                    <div style="text-align: center;">
                         <button onclick="closeModal()" class="btn btn-secondary">Cancel</button>
                     </div>
                 </div>
@@ -1026,6 +1081,35 @@
             
             document.body.appendChild(modal);
             window.currentModal = modal;
+        }
+        
+        function loadGameFromFile() {
+            const fileInput = document.getElementById('game-file-input');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('⚠️ Please select a file first!');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const gameData = JSON.parse(e.target.result);
+                    
+                    if (!gameData || gameData.length !== 36) {
+                        throw new Error('Invalid game data');
+                    }
+                    
+                    boardData = gameData;
+                    closeModal();
+                    startGame();
+                } catch (error) {
+                    alert('⚠️ Invalid game file! Please check with your teacher and try again.');
+                    console.error('Error loading game file:', error);
+                }
+            };
+            reader.readAsText(file);
         }
         
         function loadGameFromCode() {
