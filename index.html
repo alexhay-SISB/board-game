@@ -1282,7 +1282,6 @@
             cell.onclick = function() {
                 this.classList.add('flipped');
                 this.classList.remove('highlighted'); // Stop flashing when clicked
-                this.onclick = null;
                 
                 // Stop the timer when cell is clicked
                 stopTimer();
@@ -1292,9 +1291,15 @@
                 
                 // Add click handlers to point buttons
                 const pointButtons = this.querySelectorAll('.points-button');
+                let pointsAwarded = false;
+                
                 pointButtons.forEach(button => {
                     button.onclick = function(e) {
                         e.stopPropagation();
+                        
+                        if (pointsAwarded) return; // Prevent double-clicking
+                        pointsAwarded = true;
+                        
                         const points = parseInt(this.getAttribute('data-points'));
                         
                         // Award points
@@ -1316,15 +1321,26 @@
                         // Next player
                         currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
                         
+                        // Enable flip toggle functionality
+                        enableFlipToggle(cell);
+                        
                         // Update status
                         setTimeout(() => {
                             document.getElementById('game-status').textContent = 
-                                `${players[currentPlayerIndex].name}'s turn! Press "Roll Dice"`;
+                                `${players[currentPlayerIndex].name}'s turn! Press "Roll Dice" (or click the cell to review)`;
                             document.getElementById('roll-btn').disabled = false;
                             document.getElementById('dice-container').classList.add('hidden');
                         }, 800);
                     };
                 });
+            };
+        }
+        
+        // Enable flip toggle for reviewing question/answer
+        function enableFlipToggle(cell) {
+            cell.style.cursor = 'pointer';
+            cell.onclick = function() {
+                this.classList.toggle('flipped');
             };
         }
 
